@@ -45,8 +45,8 @@ A standalone desktop app for Facebook Messenger on macOS. Chat with friends with
 
 ```bash
 # Clone the repository
-git clone https://github.com/AceVentura/messenger-app.git
-cd messenger-app
+git clone https://github.com/stefanminch/messenger-mac.git
+cd messenger-mac
 
 # Install dependencies
 npm install
