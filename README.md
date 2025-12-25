@@ -44,7 +44,7 @@ All settings (sidebar visibility) are persisted across app restarts.
 
 ## Installation
 
-1. Download the [DMG file](https://github.com/stefanminch/messenger-mac/releases/download/v1.0.0/MessengerApp-1.0.0.dmg)
+1. Download the [DMG file](https://github.com/stefanminch/messenger-mac/releases/download/v1.1.0/MessengerApp-1.1.0.dmg)
 2. Open the DMG
 3. Drag **MessengerApp** to your **Applications** folder
 4. Launch from Applications or Spotlight
