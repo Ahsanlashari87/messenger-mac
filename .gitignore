@@ -5,3 +5,4 @@ dist/
 *.dmg
 *.zip
 .env
+package-lock.json
