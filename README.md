@@ -6,7 +6,9 @@ A standalone desktop app for Facebook Messenger on macOS. Chat with friends with
 
 ## Download
 
-**[Download Messenger for Mac (DMG)](https://drive.google.com/file/d/1gWA3tdD3BMk3RQ8kiVbrNgN3NAK-2qAj/view?usp=sharing)** - v1.0.0 | macOS 10.13+
+**[Download Messenger for Mac v1.0.0 (DMG)](https://github.com/stefanminch/messenger-mac/releases/download/v1.0.0/MessengerApp-1.0.0.dmg)** | macOS 10.13+
+
+[![GitHub Release](https://img.shields.io/github/v/release/stefanminch/messenger-mac)](https://github.com/stefanminch/messenger-mac/releases)
 
 > Signed and notarized by Apple for your security.
 
@@ -29,7 +31,7 @@ A standalone desktop app for Facebook Messenger on macOS. Chat with friends with
 
 ## Installation
 
-1. Download the [DMG file](https://drive.google.com/file/d/1gWA3tdD3BMk3RQ8kiVbrNgN3NAK-2qAj/view?usp=sharing)
+1. Download the [DMG file](https://github.com/stefanminch/messenger-mac/releases/download/v1.0.0/MessengerApp-1.0.0.dmg)
 2. Open the DMG
 3. Drag **MessengerApp** to your **Applications** folder
 4. Launch from Applications or Spotlight
