@@ -1,6 +1,9 @@
-const { app, BrowserWindow, shell, Menu, session } = require('electron');
+const { app, BrowserWindow, shell, Menu, session, dialog, net } = require('electron');
 const path = require('path');
 const fs = require('fs');
+
+const CURRENT_VERSION = app.getVersion();
+const GITHUB_REPO = 'stefanminch/messenger-mac';
 
 // Set app data path explicitly
 app.setPath('userData', path.join(app.getPath('appData'), 'MessengerApp'));
@@ -10,6 +13,14 @@ let mainWindow;
 // Settings file path
 const settingsPath = path.join(app.getPath('userData'), 'settings.json');
 
+// Generate unique install ID
+function generateInstallId() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
 // Load settings
 function loadSettings() {
   try {
@@ -17,7 +28,7 @@ function loadSettings() {
       return JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
     }
   } catch (e) {}
-  return { sidebarVisible: true, hasSeenWelcome: false };
+  return { sidebarVisible: true, hasSeenWelcome: false, installId: generateInstallId(), lastPingDate: null };
 }
 
 // Save settings
@@ -28,6 +39,82 @@ function saveSettings(settings) {
 }
 
 let settings = loadSettings();
+
+// Check for updates and track usage
+function checkForUpdates(silent = false) {
+  const request = net.request({
+    method: 'GET',
+    url: `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`
+  });
+
+  request.setHeader('User-Agent', `MessengerApp/${CURRENT_VERSION}`);
+
+  request.on('response', (response) => {
+    let data = '';
+    response.on('data', (chunk) => { data += chunk; });
+    response.on('end', () => {
+      try {
+        const release = JSON.parse(data);
+        const latestVersion = release.tag_name.replace('v', '');
+
+        if (latestVersion !== CURRENT_VERSION) {
+          dialog.showMessageBox(mainWindow, {
+            type: 'info',
+            title: 'Update Available',
+            message: `A new version (v${latestVersion}) is available!`,
+            detail: `You have v${CURRENT_VERSION}. Would you like to download the update?`,
+            buttons: ['Download', 'Later'],
+            defaultId: 0
+          }).then(({ response }) => {
+            if (response === 0) {
+              shell.openExternal(release.html_url);
+            }
+          });
+        } else if (!silent) {
+          dialog.showMessageBox(mainWindow, {
+            type: 'info',
+            title: 'No Updates',
+            message: 'You\'re up to date!',
+            detail: `Version ${CURRENT_VERSION} is the latest.`
+          });
+        }
+      } catch (e) {}
+    });
+  });
+
+  request.on('error', () => {});
+  request.end();
+
+  // Track unique daily active users (per-day counter for history)
+  const today = new Date().toISOString().split('T')[0];
+  if (settings.lastPingDate !== today) {
+    if (!settings.installId) {
+      settings.installId = generateInstallId();
+    }
+    settings.lastPingDate = today;
+    saveSettings(settings);
+
+    // Ping daily counter (e.g., daily-2025-12-26)
+    const dailyPing = net.request({
+      method: 'GET',
+      url: `https://api.counterapi.dev/v1/messenger-mac/daily-${today}/up`
+    });
+    dailyPing.on('error', () => {});
+    dailyPing.end();
+
+    // Also ping total unique users (first time only)
+    if (!settings.countedAsUser) {
+      settings.countedAsUser = true;
+      saveSettings(settings);
+      const totalPing = net.request({
+        method: 'GET',
+        url: 'https://api.counterapi.dev/v1/messenger-mac/total-users/up'
+      });
+      totalPing.on('error', () => {});
+      totalPing.end();
+    }
+  }
+}
 
 // Show welcome window on first launch
 function showWelcomeWindow() {
@@ -341,7 +428,9 @@ function createMenu() {
     {
       label: 'Help',
       submenu: [
-        { label: 'Keyboard Shortcuts', click: () => showWelcomeWindow() }
+        { label: 'Keyboard Shortcuts', click: () => showWelcomeWindow() },
+        { type: 'separator' },
+        { label: 'Check for Updates...', click: () => checkForUpdates(false) }
       ]
     }
   ];
@@ -358,6 +447,9 @@ app.whenReady().then(() => {
   if (!settings.hasSeenWelcome) {
     setTimeout(() => showWelcomeWindow(), 1500);
   }
+
+  // Check for updates silently on startup
+  setTimeout(() => checkForUpdates(true), 5000);
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
