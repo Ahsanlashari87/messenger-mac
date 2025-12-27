@@ -208,7 +208,6 @@ function createWindow() {
     height: 800,
     minWidth: 400,
     minHeight: 600,
-    titleBarStyle: 'hiddenInset',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -271,9 +270,32 @@ function createWindow() {
     mainWindow.webContents.setBackgroundThrottling(false);
   });
 
+  // Check if URL is a Messenger/Facebook redirect link and extract real URL
+  function getExternalUrl(url) {
+    try {
+      const parsed = new URL(url);
+      // Handle l.messenger.com and l.facebook.com redirect links
+      if (parsed.hostname === 'l.messenger.com' || parsed.hostname === 'l.facebook.com') {
+        const realUrl = parsed.searchParams.get('u');
+        if (realUrl) return realUrl;
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  // Check if URL should stay in app
+  function isInternalUrl(url) {
+    return url.includes('messenger.com') && !url.includes('l.messenger.com');
+  }
+
   // Handle external links - open in default browser
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (!url.includes('messenger.com') && !url.includes('facebook.com')) {
+    const externalUrl = getExternalUrl(url);
+    if (externalUrl) {
+      shell.openExternal(externalUrl);
+      return { action: 'deny' };
+    }
+    if (!isInternalUrl(url)) {
       shell.openExternal(url);
       return { action: 'deny' };
     }
@@ -282,7 +304,13 @@ function createWindow() {
 
   // Handle navigation to external sites
   mainWindow.webContents.on('will-navigate', (event, url) => {
-    if (!url.includes('messenger.com') && !url.includes('facebook.com')) {
+    const externalUrl = getExternalUrl(url);
+    if (externalUrl) {
+      event.preventDefault();
+      shell.openExternal(externalUrl);
+      return;
+    }
+    if (!isInternalUrl(url)) {
       event.preventDefault();
       shell.openExternal(url);
     }
